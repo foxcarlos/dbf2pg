@@ -13,9 +13,14 @@ ruta_arch_conf = os.path.dirname(sys.argv[0])
 archivo_configuracion = os.path.join(ruta_arch_conf, 'config.conf')
 fc = FileConfig(archivo_configuracion)
 
+#Tabla de Ejemplo - Sample Table
 t = '/media/serv_coromoto/Farmacia/Datos/farmacos.dbf'
+
+#Module dbf
 tabla = dbf.Table(t)
 tabla.open()
+
+#Variables
 fields = ''
 nombreTablaNueva = 'codigob.prueba'
 host, db, user, clave = fc.opcion_consultar('POSTGRESQL')
