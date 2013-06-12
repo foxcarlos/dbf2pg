@@ -4,10 +4,9 @@
 import sys
 #from PyQt4 import QtCore, QtGui
 from PySide import QtCore, QtGui
-from rutinas.varias import *
 import os
-#import recursos
 import dbf
+from rutinas.varias import *
 
 ruta_arch_conf = os.path.dirname(sys.argv[0])
 archivo_configuracion = os.path.join(ruta_arch_conf, 'config.conf')
@@ -24,12 +23,15 @@ tabla.open()
 #Variables
 fields = ''
 nombreTablaNueva = 'codigob.dgtdeta'
-host, db, user, clave = fc.opcion_consultar('POSTGRESQL')
-cadconex = "host='%s' dbname='%s' user='%s' password='%s'" % (host[1], db[1], user[1], clave[1])
 camposValue = ''
 
+#Conexion con PostGreSQL - Connect to PosGreSQL
+host, db, user, clave = fc.opcion_consultar('POSTGRESQL')
+cadconex = "host='%s' dbname='%s' user='%s' password='%s'" % (host[1], db[1], user[1], clave[1])
+pg = ConectarPG(cadconex)
+
 for campo in tabla.field_names:
-    #Preparar lo que ira en el Insert
+    #Preparar lo que ira en el Insert - Prepare fields name
     camposValue = camposValue + '{0} ,'.format(campo)
 
     #Prepara los campos para hacer el Create Table - Prepare the fields to make the "Create Table"
@@ -50,20 +52,16 @@ for campo in tabla.field_names:
         c = '{0} numeric({1},{2}) ,'.format(campo, long, long2)
     fields = fields + c
  
-pg = ConectarPG(cadconex)
-
 crearTabla = 'CREATE TABLE {0} ({1})'.format(nombreTablaNueva, fields[:-1].strip())
 pg.ejecutar(crearTabla)
 
 campo = ''
-lista = []
 valorValue = ''
 
 for r in tabla:
     x = [f for f in  r]
     valorValue = ''    
     for l in x:
-        #print('El campo {0} es de tipo:{1}'.format(l, type(l)))
         #type(1L) es Long type(1) es Entero y type(1.0) es Float
         if type(l) in [type(1L), type(1), type(1.0)]:
             campo = "{0}".format(l)
@@ -84,8 +82,3 @@ for r in tabla:
 
 pg.conn.commit()
 print('Finalizado')
-
-'''lcMensaje = 'Registro Guardaro Satisfactoriamente'  # self.combo.currentText()
-msgBox = QtGui.QMessageBox(QtGui.QMessageBox.Information, 'Felicidades',lcMensaje)
-msgBox.exec_()'''
-
