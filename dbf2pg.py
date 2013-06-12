@@ -31,7 +31,7 @@ for campo in tabla.field_names:
     #Preparar lo que ira en el Insert
     camposValue = camposValue + '{0} ,'.format(campo)
 
-    #Prepara los campos para hacer el Create Table
+    #Prepara los campos para hacer el Create Table - Prepare the fields to make the "Create Table"
     tipo, long, long2, tipo2 = tabla.field_info(campo)
     if tipo == 'C':
         c = '{0} character varying({1}) ,'.format(campo, long)
