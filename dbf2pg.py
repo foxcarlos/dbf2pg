@@ -41,21 +41,21 @@ class dbf2pg():
             #sys.exit("Database connection failed!\n ->%s" % (exceptionValue))
             print exceptionValue
 
-    def pgEjecutar(self):
+    def pgEjecutar(self, sqlParametros):
+        '''Metodo que permite ejecutar una sentencia SQL'''
         try:
-            self.cur.execute(self.sql_parametros)
+            self.cur.execute(sqlParametros)
             #self.records = self.cur.fetchall()
             #self.devolver = self.records
         except:
             # Obtiene la ecepcion mas reciente
             exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
             # sale del Script e Imprime un error con lo que sucedio.
-            #sys.exit("Database connection failed!\n ->%s" % (exceptionValue))
-            print exceptionValue
-
-        #self.pg = ConectarPG(self.cadConex)
+            sys.exit("Database connection failed!\n ->%s" % (exceptionValue))
+            #print exceptionValue
 
     def abrirTablaDbf(self):
+        '''Metodo que permite abrir una tabla DBF'''
         #Module dbf
         #Tabla de Ejemplo - Sample Table
         #t = '/media/serv_coromoto/Farmacia/Datos/farmacos.dbf'
@@ -64,6 +64,9 @@ class dbf2pg():
         self.tablaDbf.open()
 
     def crearTablaPg(self):
+        '''Metodo que permite tomar la estructura de una tabla .DBF y 
+        crear una tabla en PostgreSQL con la misma estructura '''
+
         fields = ''
         for campo in self.tablaDbf.field_names:
             #Preparar lo que ira en el Insert - Prepare fields name
@@ -86,15 +89,19 @@ class dbf2pg():
             elif tipo == 'N':
                 c = '{0} numeric({1},{2}) ,'.format(campo, long, long2)
             fields = fields + c     
+        
         crearTabla = 'CREATE TABLE {0} ({1})'.format(self.nombreTablaPg, fields[:-1].strip())
         self.pgConectar()
-        self.sql_parametros = crearTabla
-        self.pgEjecutar()
+        #self.sql_parametros = crearTabla
+        self.pgEjecutar(crearTabla)
         self.conn.commit()
         print('Tabla Creada con Exit en PostGreSQL')
         self.conn.close()
 
     def insertarReg(self):
+        '''Metodo que permite tomar los registros de una tabla .DBF 
+        e insertarlos en una tabla en postgreSQL'''
+
         separador = ','
         camposValue = separador.join(self.tablaDbf.field_names)
         campo = ''
@@ -121,15 +128,16 @@ class dbf2pg():
             print sqlInsert
             try:
                 self.pgConectar()
-                self.sql_parametros = sqlInsert
-                self.pgEjecutar()
+                #self.sql_parametros = sqlInsert
+                self.pgEjecutar(sqlInsert)
                 self.conn.commit()
-                #self.pg.ejecutar(sqlInsert)
-                time.sleep(1)
+                #time.sleep(1)
             except:
                 print('Error...')
                 sys.exit()
-        self.pg.conn.commit()
+        #self.conn.commit()
+        return len(self.tablaDbf)
+
 
 if __name__ == '__main__':
     app = dbf2pg()
@@ -137,9 +145,9 @@ if __name__ == '__main__':
     app.archivoConfiguracion()
     app.nombreTablaDbf = '/media/serv_coromoto/Suministro/Datos/insumos.dbf'
     app.abrirTablaDbf()
-    app.nombreTablaPg = 'insumos'
-    #app.crearTablaPg()
-    app.insertarReg()
+    app.nombreTablaPg = 'codigob.insumos'
+    app.crearTablaPg()
+    totalReg = app.insertarReg()
     tiempoFinal = datetime.datetime.now()
     tiempoTotal = tiempoFinal - app.tiempoInicial
-    print 'Segundos total transcurridos:{0}'.format(tiempoTotal.seconds)
+    print 'Segundos total transcurridos:{0} de {1} Registros'.format(tiempoTotal.seconds, totalReg)
