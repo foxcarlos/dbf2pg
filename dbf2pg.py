@@ -2,64 +2,49 @@
 # -*- coding: utf-8 -*-
 
 import sys
-from PySide import QtCore, QtGui
-import os
 import dbf
-from rutinas.varias import *
+from rutinas.varias import *  # https://github.com/foxcarlos/rutinas.git
 import datetime
-import time
+import psycopg2
 
 class dbf2pg():
+    '''Clase que permite exportar una tabla .dbf de foxpro o visual foxpro 
+    tanto su estructura como los registros hacia una tabla de una base de datos
+    de PostGreSQL'''
     def __init__(self):
         self.nombreTablaDbf = ''
         self.nombreTablaPg = ''
         self.camposValue = ''
         self.tiempoInicial = datetime.datetime.now()
-        self.cadConex = ''
-        self.archivoConf = ''
-    
-    def archivoConfiguracion(self):
-        '''Parametros 1 tipo String Ej:archivoConfiguracion('config.conf')
-        Permite Cargar el Archivo de Configuracion que se le pase como parametro
-        y configurar postgres segun los argumentos que esten declarados dentro de 
-        este archivo, tales como host, nombre de base de datos, usuario, y clave'''
-        ruta_arch_conf = os.path.dirname(sys.argv[0])
-        archivo_configuracion = os.path.join(ruta_arch_conf, self.archivoConf)
-        fc = FileConfig(archivo_configuracion)
-        host, db, user, clave = fc.opcion_consultar('POSTGRESQL')
-        self.cadConex = "host='%s' dbname='%s' user='%s' password='%s'" % (host[1], db[1], user[1], clave[1])
 
-    def pgConectar(self):
-        '''Conexion con PostGreSQL - Connect to PosGreSQL'''
+    def pgConectar(self, stringConnect):
+        '''Conexion con PostGreSQL - Connect to PosGreSQL Ej:
+        host='10.121.6.4' dbname='carlosgarciadb' user='admhc' password='shc21152115'
+        '''
+        cadConex = stringConnect
         try:
-            self.conn = psycopg2.connect(self.cadConex)
+            self.conn = psycopg2.connect(cadConex)
             self.cur = self.conn.cursor()
         except:
             # Obtiene la ecepcion mas reciente
             exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
             # sale del Script e Imprime un error con lo que sucedio.
-            #sys.exit("Database connection failed!\n ->%s" % (exceptionValue))
-            print exceptionValue
+            sys.exit("Database connection failed!\n ->%s" % (exceptionValue))
 
     def pgEjecutar(self, sqlParametros):
         '''Metodo que permite ejecutar una sentencia SQL'''
         try:
             self.cur.execute(sqlParametros)
-            #self.records = self.cur.fetchall()
-            #self.devolver = self.records
         except:
             # Obtiene la ecepcion mas reciente
             exceptionType, exceptionValue, exceptionTraceback = sys.exc_info()
             # sale del Script e Imprime un error con lo que sucedio.
             sys.exit("Database connection failed!\n ->%s" % (exceptionValue))
-            #print exceptionValue
 
     def abrirTablaDbf(self):
         '''Metodo que permite abrir una tabla DBF'''
         #Module dbf
         #Tabla de Ejemplo - Sample Table
-        #t = '/media/serv_coromoto/Farmacia/Datos/farmacos.dbf'
-        #t = '/media/serv_coromoto/digitado/data/dgtdeta.dbf'
         self.tablaDbf = dbf.Table(self.nombreTablaDbf)
         self.tablaDbf.open()
 
@@ -68,10 +53,7 @@ class dbf2pg():
         crear una tabla en PostgreSQL con la misma estructura '''
 
         fields = ''
-        for campo in self.tablaDbf.field_names:
-            #Preparar lo que ira en el Insert - Prepare fields name
-            #self.camposValue = self.camposValue + '{0} ,'.format(campo)
-            
+        for campo in self.tablaDbf.field_names:        
             #Prepara los campos para hacer el Create Table - Prepare the fields to make the "Create Table"
             tipo, long, long2, tipo2 = self.tablaDbf.field_info(campo)
             if tipo == 'C':
@@ -91,12 +73,7 @@ class dbf2pg():
             fields = fields + c     
         
         crearTabla = 'CREATE TABLE {0} ({1})'.format(self.nombreTablaPg, fields[:-1].strip())
-        self.pgConectar()
-        #self.sql_parametros = crearTabla
-        self.pgEjecutar(crearTabla)
-        self.conn.commit()
-        print('Tabla Creada con Exit en PostGreSQL')
-        self.conn.close()
+        return crearTabla
 
     def insertarReg(self):
         '''Metodo que permite tomar los registros de una tabla .DBF 
@@ -106,7 +83,7 @@ class dbf2pg():
         camposValue = separador.join(self.tablaDbf.field_names)
         campo = ''
         valorValue = ''
-
+        listaInsert = []
         for r in self.tablaDbf:
             x = [f for f in  r]
             valorValue = ''    
@@ -115,8 +92,11 @@ class dbf2pg():
                 if type(l) in [type(1L), type(1), type(1.0)]:
                     campo = "{0}".format(l)
                 if isinstance(l, str) or isinstance(l, unicode):
+                    #Ignoro cualquier caracter extraño
                     l = l.encode('ASCII', errors = 'ignore')
-                    campo = "'{0}'".format(str(l).strip())
+                    #Si el campo contiene un signo de $ lo remplazo por ''
+                    l = l.replace('$', '') if '$' in l else l
+                    campo = "$${0}$$".format(str(l).strip())
                 elif isinstance(l, bool):
                     campo = "{0}".format(l)
                 elif isinstance(l, datetime.date):
@@ -125,29 +105,35 @@ class dbf2pg():
                     campo = "{0}".format("null")
                 valorValue = valorValue + campo +', '
             sqlInsert = 'insert into {0} ({1}) values ({2})'.format(self.nombreTablaPg, camposValue, valorValue[:-2])
-            print sqlInsert
-            try:
-                self.pgConectar()
-                #self.sql_parametros = sqlInsert
-                self.pgEjecutar(sqlInsert)
-                self.conn.commit()
-                #time.sleep(1)
-            except:
-                print('Error...')
-                sys.exit()
-        #self.conn.commit()
-        return len(self.tablaDbf)
+            listaInsert.append(sqlInsert)
+        return listaInsert
 
+    def procesar(self, crearTabla='', insertarReg=''):
+        ''' '''
+        self.crearTablaPG = crearTabla
+        self.insertarRegPG = insertarReg
+        
+        if self.crearTablaPG or self.insertarRegPG:
+            cadenaConexion = "host='10.121.6.4' dbname='carlosgarcia' user='admhc' password='shc21152115'"
+            self.pgConectar(cadenaConexion)
+
+            if self.crearTablaPG:
+                self.pgEjecutar(self.crearTablaPG)
+                
+            if self.insertarRegPG:
+                for fila in self.insertarRegPG:
+                    self.pgEjecutar(fila)
+            self.conn.commit()
+            self.conn.close()
 
 if __name__ == '__main__':
     app = dbf2pg()
-    app.archivoConf = 'config.conf'
-    app.archivoConfiguracion()
-    app.nombreTablaDbf = '/media/serv_coromoto/Suministro/Datos/insumos.dbf'
+    app.nombreTablaDbf = '/media/serv_coromoto/farmacia/datos/farmacos.dbf'
     app.abrirTablaDbf()
-    app.nombreTablaPg = 'codigob.insumos'
-    app.crearTablaPg()
-    totalReg = app.insertarReg()
+    app.nombreTablaPg = 'codigob.farmacos'
+    x = app.crearTablaPg()
+    y = app.insertarReg()
+    app.procesar(x, y)
     tiempoFinal = datetime.datetime.now()
     tiempoTotal = tiempoFinal - app.tiempoInicial
-    print 'Segundos total transcurridos:{0} de {1} Registros'.format(tiempoTotal.seconds, totalReg)
+    #print 'Segundos total transcurridos:{0} de {1} Registros'.format(tiempoTotal.seconds, totalReg)
