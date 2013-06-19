@@ -128,12 +128,17 @@ class dbf2pg():
 
 if __name__ == '__main__':
     app = dbf2pg()
+    
+    #Indicar el nombre de la tabla .dbf que se desea exportar
     app.nombreTablaDbf = '/media/serv_coromoto/farmacia/datos/farmacos.dbf'
     app.abrirTablaDbf()
+    
+    #Indicar el Nombre de la tabla en PostGreSQL que se desea crear
+    #En Mi Caso  codigob es un esquema y farmacos es la tabla en PG
     app.nombreTablaPg = 'codigob.farmacos'
     x = app.crearTablaPg()
     y = app.insertarReg()
     app.procesar(x, y)
     tiempoFinal = datetime.datetime.now()
     tiempoTotal = tiempoFinal - app.tiempoInicial
-    #print 'Segundos total transcurridos:{0} de {1} Registros'.format(tiempoTotal.seconds, totalReg)
+    print 'Segundos total transcurridos:{0}'.format(tiempoTotal.seconds)
