@@ -114,7 +114,7 @@ class dbf2pg():
         self.insertarRegPG = insertarReg
         
         if self.crearTablaPG or self.insertarRegPG:
-            cadenaConexion = "host='10.121.6.4' dbname='carlosgarcia' user='admhc' password='shc21152115'"
+            cadenaConexion = "host='10.121.6.12' dbname='coromoto' user='admhc' password='shc21152115'"
             self.pgConectar(cadenaConexion)
 
             if self.crearTablaPG:
@@ -136,9 +136,9 @@ if __name__ == '__main__':
     #Indicar el Nombre de la tabla en PostGreSQL que se desea crear
     #En Mi Caso  codigob es un esquema y farmacos es la tabla en PG
     app.nombreTablaPg = 'codigob.farmacos'
-    x = app.crearTablaPg()
+    #x = app.crearTablaPg()
     y = app.insertarReg()
-    app.procesar(x, y)
+    app.procesar('', y)
     tiempoFinal = datetime.datetime.now()
     tiempoTotal = tiempoFinal - app.tiempoInicial
     print 'Segundos total transcurridos:{0}'.format(tiempoTotal.seconds)
