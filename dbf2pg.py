@@ -1,6 +1,6 @@
-#otro comentario
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
 import sys
 import dbf
 from rutinas.varias import *  # https://github.com/foxcarlos/rutinas.git
