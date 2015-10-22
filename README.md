@@ -9,12 +9,3 @@ dbf:
 https://pypi.python.org/pypi/dbf
 
 nota: Visual FoxPro (VarChar, VarBinary, or BLOB enabled) no support
-
-
-
-
-comentario final
-
-
-
-otro comentario
