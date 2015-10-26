@@ -11,3 +11,5 @@ https://pypi.python.org/pypi/dbf
 nota: Visual FoxPro (VarChar, VarBinary, or BLOB enabled) no support
 
 otro registro 22-10-2015
+
+otro registro 26-10-2015 - JIL
