@@ -12,3 +12,4 @@ nota: Visual FoxPro (VarChar, VarBinary, or BLOB enabled) no support
 
 otro registro 22-10-2015
 adelantandome a luengo en el push 26-10-2015
+de nuevo me adelante a luengo 26-10-2015
